@@ -1,0 +1,39 @@
+- What is Nix?
+  - What does it do with your system?
+    - On installation
+    - During runtime
+- Features of Nix
+  - Builds packages but doesn't replace traditional build tools (e.g. make)
+  - Source based (but with binary cache)
+  - Always having the newest packages (if not - update yourself)
+  - Lazy evaluation
+  - Purely functional - only dependend on inputs
+  - Overriding system packages with overlay
+- What can you use Nix for?
+  - Temporary shell
+    - Packages and environment variables
+    - Get shell with everything necessary to build package (e.g. with make)
+  - Building ISO
+  - Building packages
+  - Modifying packages
+    - Supplying a patch
+    - Changing source entirely
+    - Changing configure, installPhase or anything else
+  - Absolute transparency on how something is built
+  - Portability -  the only thing you need is Nix
+  - Absolute reproducibility with pinning nixpkgs
+- Why is Nix special?
+  - On any Linux or MacOS system!
+  - Easily have multiple versions of a package
+- Problem that Nix solves
+  - No lock on package database! You can run multiple build or installations
+  - No "conflict between packages [go solve it yourself]"
+  - No root required for things that don't need it
+  - Installing packages doesn't pollute the system
+- Problems with Nix
+  - Little documentation
+  - Code is the documentation (code is mostly easy to read)
+  - Not the biggest community
+  - Custom dynamic linker interpreter (ld-linux.so) hardcoded => binaries not portable
+- NixOS?
+  - `service.enable = true`
