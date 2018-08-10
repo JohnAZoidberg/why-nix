@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="author" content="Daniel Schaefer">
+  <meta name="dcterms.date" content="2018-08-10">
+  <title>Why Nix</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="https://lab.hakim.se/reveal-js/css/reveal.css">
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="https://lab.hakim.se/reveal-js/css/theme/solarized.css" id="theme">
+  <!-- Printing and PDF exports -->
+  <script>
+    var link = document.createElement( 'link' );
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = window.location.search.match( /print-pdf/gi ) ? 'https://lab.hakim.se/reveal-js/css/print/pdf.css' : 'https://lab.hakim.se/reveal-js/css/print/paper.css';
+    document.getElementsByTagName( 'head' )[0].appendChild( link );
+  </script>
+  <!--[if lt IE 9]>
+  <script src="https://lab.hakim.se/reveal-js/lib/js/html5shiv.js"></script>
+  <![endif]-->
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">Why Nix</h1>
+  <p class="author">Daniel Schaefer</p>
+  <p class="date">August 10, 2018</p>
+</section>
+
+<section id="agenda" class="slide level2">
+<h2>Agenda</h2>
+<ul>
+<li class="fragment">Target audience</li>
+<li class="fragment">What is Nix?</li>
+<li class="fragment">Features of Nix</li>
+<li class="fragment">What can you use Nix for?</li>
+<li class="fragment">Why is Nix special?</li>
+<li class="fragment">Problem that Nix eliminates</li>
+<li class="fragment">Problems with Nix</li>
+<li class="fragment">NixOS?</li>
+</ul>
+</section>
+<section id="target-audience" class="slide level2">
+<h2>Target audience</h2>
+<ul>
+<li class="fragment">Busy, pragmatic</li>
+<li class="fragment">Doesn’t care about “functional” and “lazyness” per se</li>
+<li class="fragment">Doesn’t want to break compatibility with traditional tools</li>
+</ul>
+</section>
+<section id="what-is-nix" class="slide level2">
+<h2>What is Nix?</h2>
+<ul>
+<li class="fragment">A package manager</li>
+<li class="fragment">A lazy, pure functional, dynamically typed language</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="what-does-it-do-with-your-system">What does it do with your system?</h3>
+<p>On installation:</p>
+<ul>
+<li class="fragment">Creates <code>/nix/{store,var}</code></li>
+<li class="fragment">Creates build users</li>
+<li class="fragment">Creates <code>nix-daemon.service</code></li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="what-does-it-do-with-your-system-1">What does it do with your system?</h3>
+<p>During runtime:</p>
+<ul>
+<li class="fragment"><code>/nix/{store,var}</code></li>
+<li class="fragment"><code>$PATH</code></li>
+<li class="fragment">Other environment variables</li>
+<li class="fragment">Symlinks in ~/.nix-profile or /run/current-system</li>
+<li class="fragment">Symlinks to <code>/nix/store/xxxxxx</code> in current directory named <code>result</code></li>
+</ul>
+</section>
+<section id="features-of-nix" class="slide level2">
+<h2>Features of Nix</h2>
+<ul>
+<li class="fragment">Builds packages but doesn’t replace traditional build tools (e.g. make)</li>
+<li class="fragment">Source based (but with binary cache)</li>
+<li class="fragment">Always having the newest packages (if not - update yourself)</li>
+<li class="fragment">Atomic installation, upgrades and rollback</li>
+<li class="fragment">Lazy evaluation</li>
+<li class="fragment">Purely functional - only dependend on inputs</li>
+<li class="fragment">Overriding system packages with overlay</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="builds-packages-but-doesnt-replace-traditional-build-tools-e.g.make">Builds packages but doesn’t replace traditional build tools (e.g. make)</h3>
+<pre><code>{ stdenv, fetchurl }:
+stdenv.mkDerivation rec {
+  name = &quot;hello-2.10&quot;;
+
+  src = fetchurl {
+    url = &quot;mirror://gnu/hello/${name}.tar.gz&quot;;
+    sha256 = &quot;0ssi1wpaf7plaswqqjwigppsg5fyh99vdlb9kzl7c9lng89n&quot;;
+  };
+}</code></pre>
+</section>
+<section class="slide level2">
+
+<p><code>stdenv.mkDerivation</code> calls <code>./configure</code> and <code>make</code> and <code>make install</code></p>
+</section>
+<section class="slide level2">
+
+<h3 id="source-based-but-with-binary-cache">Source based (but with binary cache)</h3>
+<pre><code>  src = fetchurl {
+    url = &quot;mirror://gnu/hello/${name}.tar.gz&quot;;
+    sha256 = &quot;0ssi1wpaf7plaswqqjwigppsg5fyh99vdlb9kzl7c9lng89n&quot;;
+  };</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="always-having-the-newest-packages-if-not---update-yourself">Always having the newest packages (if not - update yourself)</h3>
+<p>https://github.com/nixos/nixpkgs has ~150k commits and 1700+ contributors</p>
+<ul>
+<li class="fragment">Disclmainer: Including Leon and me</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="updating-a-package">Updating a package</h3>
+<pre><code>  name = &quot;hello-${version}&quot;;
+  version = &quot;2.10&quot;;
+
+  src = fetchurl {
+    url = &quot;mirror://gnu/hello/${name}.tar.gz&quot;;
+    sha256 = &quot;0ssi1wpaf7plaswqqjwigppsg5fyh99vdlb9kzl7c9lng89n&quot;;
+  };</code></pre>
+<ul>
+<li class="fragment">Update version</li>
+<li class="fragment">Update hash of tarball</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="atomic-installation-upgrades-and-rollback">Atomic installation, upgrades and rollback</h3>
+<ul>
+<li class="fragment">Installations cannot fail</li>
+<li class="fragment">Installations don’t clutter your system</li>
+<li class="fragment">Uninstalling == not having the package on your $PATH</li>
+<li class="fragment"><code>nix-collect-garbage</code> if running low on space</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="overriding-system-packages-with-overlay">Overriding system packages with overlay</h3>
+<ul>
+<li class="fragment">Replace openssl in every package with libressl? easy</li>
+<li class="fragment">Replace openssl in some packages with libressl? easy</li>
+<li class="fragment">Replace libc -&gt; everything get’s rebuilt</li>
+</ul>
+</section>
+<section id="what-can-you-use-nix-for" class="slide level2">
+<h2>What can you use Nix for?</h2>
+<ul>
+<li class="fragment">Installing a package</li>
+<li class="fragment">Temporary shell</li>
+<li class="fragment">Building a package</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="installing-a-package">Installing a package</h3>
+<pre><code>$ nix-env -i chromium
+$ chromium</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="temporary-shell">Temporary shell</h3>
+<ul>
+<li class="fragment">Packages and environment variables</li>
+<li class="fragment">Shell with everything necessary to build package</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="packages-and-environment-variables">Packages and environment variables</h3>
+<p>Image you didn’t want PHP installed but had to demonstrate it’s flaws:</p>
+<pre><code>$ nix-shell -p php
+$ php -a
+Interactive shell
+
+php &gt; var_dump(1 == &quot;1el0&quot;);
+bool(true)
+php &gt; var_dump(1 == &quot;1e10&quot;);
+bool(false)
+php &gt; exit
+$ man php
+$ exit
+$ php
+php: command not found</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="shell-with-language-packages">Shell with language packages</h3>
+<p>Python is better than PHP but you need packages for many things</p>
+<pre><code>nix-shell -p python36Packages.matplotlib python36Packages.ipython --command ipython</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="shell-with-everything-necessary-to-build-package">Shell with everything necessary to build package</h3>
+<p>(e.g. make gcc dependencies)</p>
+<pre><code>$ git clone https://github.com/qemu/qemu
+$ cd qemu
+$ nix-shell &#39;&lt;nixpkgs&gt;&#39; -A qemu
+$ ./configure
+$ make
+$ ./x86_64-softmmu/qemu-system-x86_64</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="building-iso">Building ISO</h3>
+<p>iso.nix</p>
+<pre><code>{config, pkgs, ...}:
+{
+  imports = [
+    &lt;nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix&gt;
+  ];
+}</code></pre>
+<pre><code>nix-build &#39;&lt;nixpkgs/nixos&gt;&#39; -A config.system.build.isoImage -I nixos-config=iso.nix</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="custom-packages-in-live-iso">Custom packages in live iso?</h3>
+<pre><code>{config, pkgs, ...}:
+{
+  imports = [
+    &lt;nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix&gt;
+  ];
+  environment.systemPackages = [
+    cowsay vim tmux git wget
+  ];
+}</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="custom-services-and-more-in-iso">Custom services and more in iso</h3>
+<ul>
+<li>Enable services like sshd (with allowed pub keys)</li>
+<li>Create user</li>
+<li>Set static IP address</li>
+</ul>
+<p>But! This is about Nix not NixOS</p>
+</section>
+<section class="slide level2">
+
+<h3 id="building-packages">Building packages</h3>
+<ul>
+<li class="fragment">Regular packages (Gentoo style)</li>
+<li class="fragment">Cross compiling</li>
+<li class="fragment">While developing</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="regular-packages-gentoo-style">Regular packages (Gentoo style)</h3>
+<pre><code>nix-build &#39;&lt;nixpkgs&gt;&#39; -A  hello --option build-use-substitutes false</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="cross-compiling">Cross Compiling</h3>
+<pre><code>nix-build &#39;&lt;nixpkgs&gt;&#39; --arg crossSystem &#39;(import &lt;nixpkgs&gt; {}).lib.systems.examples.aarch64-multiplatform&#39; -A hello</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="while-developing">While developing</h3>
+<pre><code>$ cat default.nix
+with import &lt;nixpkgs&gt; {};
+stdenv.mkDerivation {
+  name = &quot;why-nix-presentation&quot;;
+  src = ./.;
+  buildInputs = with pkgs; [ pandoc ];
+}
+$ nix-build
+$ firefox result</code></pre>
+<ul>
+<li class="fragment"><code>nix-shell --command make</code></li>
+<li class="fragment">to upstream change src to git</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="modifying-packages">Modifying packages</h3>
+<ul>
+<li class="fragment">Supplying a patch</li>
+<li class="fragment">Changing source entirely</li>
+<li class="fragment">Changing configure, installPhase or anything else</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="supplying-a-patch">- Supplying a patch</h3>
+<p>Add single line to <code>$package.nix</code>:</p>
+<pre><code>patches = [ ./covfefe.diff ];</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="changing-source-entirely">Changing source entirely</h3>
+<p>For developing use current directory:</p>
+<pre><code>src = ./.;</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="changing-source-entirely-1">Changing source entirely</h3>
+<p>Use own fork:</p>
+<pre><code>src = fetchFromGitHub {
+  owner = &quot;me&quot;;
+  repo = &quot;fork&quot;;
+  rev = &quot;v${version}&quot;;
+  sha256 = &quot;1gd0bq5x49sjm83r2wivjf03dxvhdli6cvwb9b853wwcvy4&quot;;
+};</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="changing-configure-installphase-or-anything-else">Changing configure, installPhase or anything else</h3>
+<pre><code>configurePhase = &#39;&#39;
+   ./weird-configure
+&#39;&#39;;</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="absolute-transparency-on-how-something-is-built">Absolute transparency on how something is built</h3>
+<p>Just look at the package in $nixpkgs</p>
+</section>
+<section class="slide level2">
+
+<h3 id="portability---the-only-thing-you-need-is-nix">Portability - the only thing you need is Nix</h3>
+<pre><code>$ nix-shell -p cowsay --command &quot;cowsay Nix works!&quot;
+ ____________
+&lt; Nix works! &gt;
+ ------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="absolute-reproducibility-with-pinning-nixpkgs">Absolute reproducibility with pinning nixpkgs</h3>
+<pre><code>let
+  fetchNixpkgs = { rev, sha256 } : builtins.fetchTarball {
+    url = &quot;https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz&quot;;
+    inherit sha256;
+  };
+in
+  import (fetchNixpkgs {
+    rev = &quot;5141f28405e5d31f21c10869dfc86ff340053787&quot;;
+    sha256 = &quot;0q91kfxg950g1nr71ifxhb4gfn3vfs4szh2yn7z8s2xri4l36p5m&quot;;
+  }) { config = {}; }</code></pre>
+</section>
+<section id="why-is-nix-special" class="slide level2">
+<h2>Why is Nix special?</h2>
+<ul>
+<li class="fragment">On any Linux or MacOS system!</li>
+<li class="fragment">Easily have multiple versions of a package</li>
+<li class="fragment">Immutable package store</li>
+<li class="fragment">Isolated build environment</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="easily-have-multiple-versions-of-a-package">Easily have multiple versions of a package</h3>
+<pre><code>$ nix-shell -p openssl_1_0_2 --command &quot;openssl version&quot;
+OpenSSL 1.0.2o  27 Mar 2018
+
+$ nix-shell -p openssl_1_1_0 --command &quot;openssl version&quot;
+OpenSSL 1.1.0h  27 Mar 2018</code></pre>
+</section>
+<section class="slide level2">
+
+<h3 id="immutable-package-store">Immutable package store</h3>
+<p>Nothing can screw with installed packages</p>
+</section>
+<section class="slide level2">
+
+<h3 id="isolated-build-environment">Isolated build environment</h3>
+<p>Package is dependent on:</p>
+<ul>
+<li class="fragment">Inputs</li>
+<li class="fragment">Nixpkgs</li>
+</ul>
+</section>
+<section id="problem-that-nix-eliminates" class="slide level2">
+<h2>Problem that Nix eliminates</h2>
+<ul>
+<li class="fragment">No lock on package database! You can run multiple builds or installations</li>
+<li class="fragment">No “conflict between packages [go solve it yourself]”</li>
+<li class="fragment">No root required</li>
+<li class="fragment">Installing packages doesn’t pollute the system</li>
+</ul>
+</section>
+<section id="problems-with-nix" class="slide level2">
+<h2>Problems with Nix</h2>
+<ul>
+<li class="fragment">Little documentation</li>
+<li class="fragment">Code is the documentation (code is mostly easy to read)</li>
+<li class="fragment">Not the biggest community</li>
+<li class="fragment">Custom dynamic linker interpreter (ld-linux.so) hardcoded =&gt; binaries not portable</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<h3 id="summary">Summary</h3>
+<ul>
+<li class="fragment">Clean system</li>
+<li class="fragment">Reproducible builds for all languages</li>
+<li class="fragment">Quick shell with programs and libraries</li>
+<li class="fragment">Transparency and modifiability of packages</li>
+</ul>
+</section>
+<section id="nixos" class="slide level2">
+<h2>NixOS?</h2>
+<p>Configure entire system declaratively</p>
+<pre><code>networking.interfaces.eth0.ipv4. = [{
+  address = &quot;192.168.192.1&quot;;
+  prefixLength = 24;
+}];
+time.timeZone = &quot;Europe/London&quot;;
+services.openssh.enable = true;
+boot.kernelPackages = pkgs.linuxPackages_4_17;
+users.extraUsers.elprofesor.isNormalUser = true;
+boot.loader = {
+  systemd-boot.enable = true;
+  efi.canTouchEfiVariables = false;
+};
+boot.kernelModules = [ &quot;kvm-intel&quot; ];</code></pre>
+</section>
+    </div>
+  </div>
+
+  <script src="https://lab.hakim.se/reveal-js/lib/js/head.min.js"></script>
+  <script src="https://lab.hakim.se/reveal-js/js/reveal.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+keyboard:{38:"prev",40:"next"},
+        // Push each slide change to the browser history
+        history: true,
+
+        // Optional reveal.js plugins
+        dependencies: [
+          { src: 'https://lab.hakim.se/reveal-js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: 'https://lab.hakim.se/reveal-js/plugin/zoom-js/zoom.js', async: true },
+          { src: 'https://lab.hakim.se/reveal-js/plugin/notes/notes.js', async: true }
+        ]
+      });
+    </script>
+    </body>
+</html>
